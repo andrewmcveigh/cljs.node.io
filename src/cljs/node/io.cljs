@@ -5,7 +5,7 @@
   (:require
    [cljs.nodejs :as node]
    [cljs.node.reader :as reader :refer [read-line]]
-   [cljs.node.types :as types]
+   [cljs.node.types.file :as file]
    [clojure.string :as string]))
 
 (def Path (node/require "path"))
@@ -30,12 +30,12 @@
   (as-url [_] nil)
   
   string
-  (as-file [s] (types/file s))
+  (as-file [s] (file/file s))
   (as-url [s] (.parse URL s))
   
-  types/File
+  file/File
   (as-file [f] f)
-  (as-url [f] (.resolve URL "file://" (types/-path f)))
+  (as-url [f] (.resolve URL "file://" (file/-path f)))
 
   ;; URL
   ;; (as-url [u] u)
@@ -93,9 +93,9 @@
                                  {:type :illegal-argument})))})
 
 (extend-protocol IOFactory
-  types/File
+  file/File
   (make-reader [x opts]
-    (apply reader/sync-file-reader (types/-path x) (mapcat identity opts)))
+    (apply reader/sync-file-reader (file/-path x) (mapcat identity opts)))
 
   string
   (make-reader [x opts]
@@ -118,9 +118,23 @@
   ([arg] 
    (as-file arg))
   ([parent child]
-   (types/file (as-file parent) (as-relative-path child)))
+   (file/file (as-file parent) (as-relative-path child)))
   ([parent child & more]
    (reduce file (file parent child) more)))
+
+(defn delete-file
+  "Delete file f. Raise an exception if it fails unless silently is true."
+  [f & [silently]]
+  (or (file/-delete! (file f))
+      silently
+      (throw (ex-info (str "Couldn't delete " f) {:types :io-exception}))))
+
+(defn make-parents
+  "Given the same arg(s) as for file, creates all parent directories of
+   the file they represent."
+  [f & more]
+  (when-let [parent (file/-parent (apply file f more))]
+    (file/-mkdirs! parent)))
 
 (defn line-seq
   "Returns the lines of text from rdr as a lazy sequence of strings.
