@@ -5,8 +5,11 @@
 
 (deftest io-test
   (println
-   (io/with-open [r (r/sync-file-reader "project.clj")]
-     (pr-str (io/line-seq r)))))
+   (io/with-open [r (io/reader (io/file "project.clj"))]
+     (pr-str (io/line-seq r))))
+  
+  ;; (prn (io/reader (io/file "project.clj")))
+  )
 
 (enable-console-print!)
 (run-tests)

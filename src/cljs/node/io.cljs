@@ -5,6 +5,7 @@
   (:require
    [cljs.nodejs :as node]
    [cljs.node.reader :as reader :refer [read-line]]
+   [cljs.node.types :as types]
    [clojure.string :as string]))
 
 (def Path (node/require "path"))
@@ -28,21 +29,22 @@
   (as-file [_] nil)
   (as-url [_] nil)
   
-  js/String
-  (as-file [s] (.parse Path s))
+  string
+  (as-file [s] (types/file s))
   (as-url [s] (.parse URL s))
   
-  Path
+  types/File
   (as-file [f] f)
-  (as-url [f] (.resolve URL "file://" (.format f)))
+  (as-url [f] (.resolve URL "file://" (types/-path f)))
 
-  URL
-  (as-url [u] u)
-  (as-file [u]
-    (if (= "file" (.-protocol u))
-      (as-file (escaped-utf8-urlstring->str
-                (.replace (.-pathname u) \/ (.-sep Path))))
-      (throw (ex-info (str "Not a file: " u) {:type :illegal-argument})))))
+  ;; URL
+  ;; (as-url [u] u)
+  ;; (as-file [u]
+  ;;   (if (= "file" (.-protocol u))
+  ;;     (as-file (escaped-utf8-urlstring->str
+  ;;               (.replace (.-pathname u) \/ (.-sep Path))))
+  ;;     (throw (ex-info (str "Not a file: " u) {:type :illegal-argument}))))
+  )
 
 (defprotocol IOFactory
   "Factory functions that create ready-to-use, buffered versions of
@@ -91,11 +93,11 @@
                                  {:type :illegal-argument})))})
 
 (extend-protocol IOFactory
-  Path
+  types/File
   (make-reader [x opts]
-    (apply reader/sync-file-reader (.format x) (mapcat identity opts)))
+    (apply reader/sync-file-reader (types/-path x) (mapcat identity opts)))
 
-  js/String
+  string
   (make-reader [x opts]
     (make-reader (as-file x) opts)))
 
@@ -116,7 +118,7 @@
   ([arg] 
    (as-file arg))
   ([parent child]
-   (.resolve Path (as-file parent) (as-relative-path child)))
+   (types/file (as-file parent) (as-relative-path child)))
   ([parent child & more]
    (reduce file (file parent child) more)))
 
