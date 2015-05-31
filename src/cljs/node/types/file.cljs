@@ -11,6 +11,7 @@
   (-parent [_])
   (-filename [_])
   (-delete! [_])
+  (-touch! [_])
   (-mkdir! [_])
   (-mkdirs! [_])
   )
@@ -18,7 +19,7 @@
 (deftype File [path-obj]
   IFile
   (-absolute? [_] (.isAbsolute path path-obj))
-  (-exists? [_] (.existsSync fs path-obj))
+  (-exists? [this] (.existsSync fs (-path this)))
   (-path [_] (.format path path-obj))
   (-parent [this]
     (let [dir (.dirname path path-obj)]
@@ -26,7 +27,11 @@
         dir
         (.resolve path path-obj ".."))))
   (-filename [_] (.basename path path-obj))
-  (-delete! [_] (.unlinkSync fs (-path path-obj)))
+  (-delete! [this] (.unlinkSync fs (-path this)))
+  (-touch! [this]
+    (let [path (-path this)]
+      (.closeSync fs (.openSync fs path "w"))
+      this))
   (-mkdir! [_] (.mkdirSync path path-obj))
   (-mkdirs! [this]
     (let [parent (-parent this)]
@@ -41,11 +46,6 @@
   (-pr-writer [o writer opts]
     (-write writer (str "#<" `File " " o ">"))))
 
-(defn file
-  ([filename]
-   {:pre [(string? filename)]}
-   (File. (.parse path filename)))
-  ([parent child]
-   (file (.resolve path parent child)))
-  ([parent child & more]
-   (reduce file (file parent child) more)))
+(defmulti file type)
+(defmethod file File [file] file)
+(defmethod file js/String [filename] (File. filename))
