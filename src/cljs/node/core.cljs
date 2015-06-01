@@ -8,17 +8,17 @@
 
 (defn slurp
   "Opens a reader on f and reads all its contents, returning a string.
-  See clojure.java.io/reader for a complete list of supported arguments."
+  See cljs.node.io/reader for a complete list of supported arguments."
   {:added "1.0"}
-  ([f & opts]
-     (let [sb (goog.string.StringBuffer.)]
-       (with-open [r (apply io/reader f opts)]
-         (loop [c (reader/read-char r)]
-           (if c
-             (str sb)
-             (do
-               (.append sb c)
-               (recur (reader/read-char r)))))))))
+  [f & opts]
+  (let [sb (goog.string.StringBuffer.)]
+    (with-open [r (apply io/reader f opts)]
+      (loop [c (reader/read-char r)]
+        (if c
+          (str sb)
+          (do
+            (.append sb c)
+            (recur (reader/read-char r))))))))
 
 (defn line-seq
   "Returns the lines of text from rdr as a lazy sequence of strings.
