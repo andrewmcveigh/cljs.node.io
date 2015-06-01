@@ -1,10 +1,9 @@
-(ns cljs.node.reader
+(ns cljs.node.types.reader
   (:require
    [cljs.nodejs :as node]
+   [cljs.node.types.file :as file]
    [cljs.node.types.stream :refer [Closeable Openable close open]]
    [goog.array]))
-
-(def fs (node/require "fs"))
 
 (defprotocol Reader
   (read-char [reader]
@@ -89,7 +88,9 @@
     (.closeSync fs (.-fd reader))
     (set! (.-fd reader) nil)))
 
-(defn sync-file-reader [filename & {:keys [length] :or {length 128}}]
-  (SyncFileReader. fs filename length nil nil))
+(defn sync-file-reader [file & {:keys [length] :or {length 128}}]
+  (SyncFileReader. (node/require "fs") (file/-path file) length nil nil))
 
-(def *in* (StdinReader. (sync-file-reader "/dev/stdin" :length 1) fs))
+(defn stdin-reader []
+  (StdinReader. (sync-file-reader (file/file "/dev/stdin") :length 1)
+                (node/require "fs")))

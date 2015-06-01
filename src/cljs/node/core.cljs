@@ -1,9 +1,15 @@
 (ns cljs.node.core
   (:require
    [cljs.node.io :as io :refer-macros [with-open]]
-   [cljs.node.reader :as reader :refer [read-line]]
-   [cljs.node.writer :as writer :refer [write!]]
+   [cljs.node.types.reader :as reader :refer [read-line]]
+   [cljs.node.types.writer :as writer :refer [write!]]
    [goog.string]))
+
+(def ^:dynamic *in*
+  (reader/stdin-reader))
+
+(def ^:dynamic *out*
+  (writer/stdout-writer))
 
 (defn slurp
   "Opens a reader on f and reads all its contents, returning a string.

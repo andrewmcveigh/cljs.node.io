@@ -1,6 +1,6 @@
 (ns cljs.node.io-test
   (:require [cljs.node.io :as io :include-macros true]
-            [cljs.node.reader :as r]
+            [cljs.node.types.reader :as r]
             [cljs.test :refer-macros [deftest is are run-tests]]))
 
 (deftest io-test

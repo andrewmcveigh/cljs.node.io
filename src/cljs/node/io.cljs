@@ -4,8 +4,8 @@
   (:require-macros [cljs.node.io :refer [with-open]])
   (:require
    [cljs.nodejs :as node]
-   [cljs.node.reader :as reader]
-   [cljs.node.writer :as writer]
+   [cljs.node.types.reader :as reader]
+   [cljs.node.types.writer :as writer]
    [cljs.node.types.file :as file]
    [cljs.node.types.stream]
    [clojure.string :as string]))
@@ -139,7 +139,6 @@
   [f & more]
   (when-let [parent (file/-parent (apply file f more))]
     (file/-mkdirs! parent)))
-
 
 
 (comment

@@ -2,7 +2,7 @@
   (:require
    [cljs.node.core :refer [spit]]
    [cljs.node.io :as io :refer-macros [with-open]]
-   [cljs.node.writer :as writer]
+   [cljs.node.types.writer :as writer]
    [cljs.test :refer-macros [deftest is are run-tests]]))
 
 (deftest writer-test
