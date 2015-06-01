@@ -35,6 +35,8 @@
           (set! buf (js/Buffer. length))
           (let [bytes-read (.readSync fs fd buf 0 length nil)]
             (when (> bytes-read 0)
+              (when (< bytes-read length)
+                (set! buf (.slice buf 0 bytes-read)))
               (pop-char!))))
         (pop-char!))))
   (peek-char [reader]

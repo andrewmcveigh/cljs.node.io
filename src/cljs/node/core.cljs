@@ -20,10 +20,10 @@
     (with-open [r (apply io/reader f opts)]
       (loop [c (reader/read-char r)]
         (if c
-          (str sb)
           (do
             (.append sb c)
-            (recur (reader/read-char r))))))))
+            (recur (reader/read-char r)))
+          (str sb))))))
 
 (defn spit
   "Opposite of slurp.  Opens f with writer, writes content, then

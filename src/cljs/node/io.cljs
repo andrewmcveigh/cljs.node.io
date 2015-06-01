@@ -97,7 +97,7 @@
 (extend-protocol IOFactory
   file/File
   (make-reader [x opts]
-    (apply reader/sync-file-reader (file/-path x) (mapcat identity opts)))
+    (apply reader/sync-file-reader x (mapcat identity opts)))
   (make-writer [x opts]
     (apply writer/sync-file-writer x (mapcat identity opts)))
 
