@@ -15,9 +15,7 @@
      (is (not (file/-exists? tmpfile)))
      (let [new-dir (io/file tmpfile "new")]
        (file/-mkdirs! new-dir)
-       (prn new-dir (file/-exists? new-dir))
-       )
-     )
+       (is (file/-exists? new-dir))))
     (catch js/Error e
       (println (.-message e))
       (println (.-stack e))
