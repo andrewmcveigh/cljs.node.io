@@ -136,12 +136,7 @@
   (when-let [parent (file/-parent (apply file f more))]
     (file/-mkdirs! parent)))
 
-(defn line-seq
-  "Returns the lines of text from rdr as a lazy sequence of strings.
-  rdr must implement cljs.node.reader.LineReader."
-  [rdr]
-  (when-let [line (read-line rdr)]
-    (cons line (lazy-seq (line-seq rdr)))))
+
 
 (comment
   
