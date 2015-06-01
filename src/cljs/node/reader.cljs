@@ -1,6 +1,7 @@
 (ns cljs.node.reader
   (:require
    [cljs.nodejs :as node]
+   [cljs.node.types.stream :refer [Closeable Openable close open]]
    [goog.array]))
 
 (def fs (node/require "fs"))
@@ -14,13 +15,6 @@
 (defprotocol LineReader
   (read-line [reader]
     "Returns the next line from the Reader, nil if the end of stream has been reached"))
-
-(defprotocol Openable
-  (open [_ body]
-    "Executes body in an \"Open\" context"))
-
-(defprotocol Closeable
-  (close [_]))
 
 (defn newline?
   "Checks whether the character is a newline"

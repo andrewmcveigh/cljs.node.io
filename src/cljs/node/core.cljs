@@ -2,9 +2,8 @@
   (:require
    [cljs.node.io :as io :refer-macros [with-open]]
    [cljs.node.reader :as reader :refer [read-line]]
-   [goog.string]
-   )
-  )
+   [cljs.node.writer :as writer :refer [write!]]
+   [goog.string]))
 
 (defn slurp
   "Opens a reader on f and reads all its contents, returning a string.
@@ -19,6 +18,13 @@
           (do
             (.append sb c)
             (recur (reader/read-char r))))))))
+
+(defn spit
+  "Opposite of slurp.  Opens f with writer, writes content, then
+  closes f. Options passed to cljs.node.io/writer."
+  [f content & options]
+  (with-open [w (apply io/writer f options)]
+    (write! w (str content))))
 
 (defn line-seq
   "Returns the lines of text from rdr as a lazy sequence of strings.

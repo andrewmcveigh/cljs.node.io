@@ -4,8 +4,10 @@
   (:require-macros [cljs.node.io :refer [with-open]])
   (:require
    [cljs.nodejs :as node]
-   [cljs.node.reader :as reader :refer [read-line]]
+   [cljs.node.reader :as reader]
+   [cljs.node.writer :as writer]
    [cljs.node.types.file :as file]
+   [cljs.node.types.stream]
    [clojure.string :as string]))
 
 (def Path (node/require "path"))
@@ -96,6 +98,8 @@
   file/File
   (make-reader [x opts]
     (apply reader/sync-file-reader (file/-path x) (mapcat identity opts)))
+  (make-writer [x opts]
+    (apply writer/sync-file-writer x (mapcat identity opts)))
 
   string
   (make-reader [x opts]
