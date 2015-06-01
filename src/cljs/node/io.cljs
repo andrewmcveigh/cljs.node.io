@@ -106,10 +106,10 @@
   a relative path, else IllegalArgumentException."
   [x]
   (let [f (as-file x)]
-    (if (.isAbsolute f)
+    (if (file/-absolute? f)
       (throw
        (ex-info (str f " is not a relative path") {:type :illegal-argument}))
-      (.format f))))
+      (file/-path f))))
 
 (defn file
   "Returns a Path, passing each arg to as-file. Multiple-arg

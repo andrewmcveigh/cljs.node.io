@@ -18,7 +18,7 @@
 
 (deftype File [path-obj]
   IFile
-  (-absolute? [_] (.isAbsolute path path-obj))
+  (-absolute? [this] (.isAbsolute path (-path this)))
   (-exists? [this] (.existsSync fs (-path this)))
   (-path [_] (.format path path-obj))
   (-parent [this]
@@ -46,6 +46,10 @@
   (-pr-writer [o writer opts]
     (-write writer (str "#<" `File " " o ">"))))
 
-(defmulti file type)
-(defmethod file File [file] file)
-(defmethod file js/String [filename] (File. filename))
+(defn file
+  ([file]
+   (if (instance? File file)
+     file
+     (File. (.parse path file))))
+  ([parent child]
+   (File. (.parse path (.resolve path (-path parent) child)))))
