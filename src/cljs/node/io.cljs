@@ -7,6 +7,7 @@
    [cljs.node.types.reader :as reader]
    [cljs.node.types.writer :as writer]
    [cljs.node.types.file :as file]
+   [cljs.node.types.url :as url]
    [cljs.node.types.stream]
    [clojure.string :as string]))
 
@@ -33,20 +34,19 @@
   
   string
   (as-file [s] (file/file s))
-  (as-url [s] (.parse URL s))
+  (as-url [s] (url/from-node-url (.parse URL s)))
   
   file/File
   (as-file [f] f)
-  (as-url [f] (.resolve URL "file://" (file/-path f)))
+  (as-url [f] (url/from-node-url (.resolve URL "file://" (file/-path f))))
 
-  ;; URL
-  ;; (as-url [u] u)
-  ;; (as-file [u]
-  ;;   (if (= "file" (.-protocol u))
-  ;;     (as-file (escaped-utf8-urlstring->str
-  ;;               (.replace (.-pathname u) \/ (.-sep Path))))
-  ;;     (throw (ex-info (str "Not a file: " u) {:type :illegal-argument}))))
-  )
+  url/URL
+  (as-url [u] u)
+  (as-file [u]
+    (if (= "file" (.-protocol u))
+      (as-file (escaped-utf8-urlstring->str
+                (.replace (.-pathname u) \/ (.-sep Path))))
+      (throw (ex-info (str "Not a file: " u) {:type :illegal-argument})))))
 
 (defprotocol IOFactory
   "Factory functions that create ready-to-use, buffered versions of
@@ -126,6 +126,7 @@
   ([parent child & more]
    (reduce file (file parent child) more)))
 
+
 (defn delete-file
   "Delete file f. Raise an exception if it fails unless silently is true."
   [f & [silently]]
@@ -140,6 +141,11 @@
   (when-let [parent (file/-parent (apply file f more))]
     (file/-mkdirs! parent)))
 
+(defn resource [n]
+  (let [url (as-url n)
+        file (as-file url)]
+    (when (file/-exists? file)
+      url)))
 
 (comment
   

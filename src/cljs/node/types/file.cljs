@@ -9,36 +9,32 @@
 
 (defprotocol IFile
   (-absolute? [_])
+  (-absolute-path [_])
+  (-accessed [_])
+  (-created [_])
+  (-delete! [_])
   (-directory? [_])
   (-exists? [_])
-  (-path [_])
-  (-parent [_])
-  (-name [_])
-  (-delete! [_])
-  (-touch! [_])
   (-mkdir! [_])
   (-mkdirs! [_])
+  (-modified [_])
+  (-name [_])
+  (-parent [_])
+  (-path [_])
+  (-touch! [_])
   )
 
 (deftype File [path-obj]
   IFile
   (-absolute? [this] (.isAbsolute path (-path this)))
+  (-absolute-path [this] (.resolve path (-path this)))
+  (-accessed [this] (.-atime (.statSync fs (-path this))))
+  (-created [this] (.-ctime (.statSync fs (-path this))))
+  (-delete! [this] (.unlinkSync fs (-path this)))
   (-directory? [this]
     (and (-exists? this)
          (.isDirectory (.statSync fs (-path this)))))
   (-exists? [this] (.existsSync fs (-path this)))
-  (-path [_] (.format path path-obj))
-  (-parent [this]
-    (let [dir (.dirname path (-path this))]
-      (if (-name this)
-        (file dir)
-        (file (.resolve path path-obj "..")))))
-  (-name [this] (.basename path (-path this)))
-  (-delete! [this] (.unlinkSync fs (-path this)))
-  (-touch! [this]
-    (let [path (-path this)]
-      (.closeSync fs (.openSync fs path "w"))
-      this))
   (-mkdir! [this] (.mkdirSync fs (-path this)) true)
   (-mkdirs! [this]
     (let [parent (-parent this)]
@@ -46,6 +42,19 @@
             (-exists? this) false
             (-directory? parent) (-mkdir! this)
             :else (and (-mkdirs! parent) (-mkdir! this)))))
+  (-modified [this] (.-mtime (.statSync fs (-path this))))
+  (-name [this] (.basename path (-path this)))
+  (-path [_] (.format path path-obj))
+  (-parent [this]
+    (let [dir (.dirname path (-path this))]
+      (if (-name this)
+        (file dir)
+        (file (.resolve path path-obj "..")))))
+  (-touch! [this]
+    (let [path (-path this)]
+      (.closeSync fs (.openSync fs path "w"))
+      this))
+
   Object
   (toString [this] (-path this)))
 
