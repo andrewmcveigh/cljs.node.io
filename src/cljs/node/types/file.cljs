@@ -61,3 +61,5 @@
      (File. (.parse path file))))
   ([parent child]
    (File. (.parse path (.resolve path (-path parent) child)))))
+
+(def separator (.-sep path))
