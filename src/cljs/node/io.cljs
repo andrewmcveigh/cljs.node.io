@@ -27,6 +27,24 @@
   (-> (clojure.string/replace s "+" (js/encodeURIComponent "+" "UTF-8"))
       (js/decodeURIComponent "UTF-8")))
 
+(def classpath-dirs ["src/" "test/"])
+
+(defn classpath-resolve [url]
+  (let [[proto & more] (seq url)
+        proto (or proto "file:")
+        proto- (str proto "//")
+        cwd (str (.cwd js/process) \/)]
+    (some #(let [url (url/resolve proto- cwd % (url/-pathname url))
+                 file (and url
+                           (= "file:" proto)
+                           (try
+                             (as-file url)
+                             (catch cljs.core.ExceptionInfo e
+                               (when-not (-> e ex-data :type (= :illegal-argument))
+                                 (throw e)))))]
+             (when (and (file/-exists? file)) url))
+          classpath-dirs)))
+
 (extend-protocol Coercions
   nil
   (as-file [_] nil)
@@ -34,18 +52,22 @@
   
   string
   (as-file [s] (file/file s))
-  (as-url [s] (url/from-node-url (.parse URL s)))
+  (as-url [s]
+    (let [u (url/parse s)]
+      (cond (url/-protocol u) u
+            (url/-absolute? u) (apply url/resolve "file://" (seq u))
+            :else (classpath-resolve u))))
   
   file/File
   (as-file [f] f)
-  (as-url [f] (url/from-node-url (.resolve URL "file://" (file/-path f))))
+  (as-url [f] (url/resolve "file://" (file/-path f)))
 
   url/URL
   (as-url [u] u)
   (as-file [u]
-    (if (= "file" (.-protocol u))
+    (if (= "file:" (url/-protocol u))
       (as-file (escaped-utf8-urlstring->str
-                (.replace (.-pathname u) \/ (.-sep Path))))
+                (.replace (url/-pathname u) \/ file/separator)))
       (throw (ex-info (str "Not a file: " u) {:type :illegal-argument})))))
 
 (defprotocol IOFactory
@@ -101,6 +123,13 @@
   (make-writer [x opts]
     (apply writer/sync-file-writer x (mapcat identity opts)))
 
+  url/URL
+  (make-reader [x opts]
+    (if (= "file:" (url/-protocol x))
+      (apply reader/sync-file-reader (as-file x) (mapcat identity opts))
+      (throw (ex-info "Cannot create reader from a URL that does not represent a file"
+                      {:type :illegal-argument}))))
+
   string
   (make-reader [x opts]
     (make-reader (as-file x) opts)))
@@ -144,7 +173,7 @@
 (defn resource [n]
   (let [url (as-url n)
         file (as-file url)]
-    (when (file/-exists? file)
+    (when (and file (file/-exists? file))
       url)))
 
 (comment
