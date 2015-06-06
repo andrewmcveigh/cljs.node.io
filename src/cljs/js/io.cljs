@@ -1,5 +1,6 @@
 (ns cljs.js.io
   (:refer-clojure :exclude [with-open])
+  (:require-macros [cljs.js.io :refer [with-open]])
   (:require
    [cljs.js.url :as url :refer [Url]]
    [clojure.string :as string]
@@ -18,7 +19,7 @@
   (peek-char [reader]
     "Returns the next char from the Reader without removing it from the reader stream"))
 
-(defprotocol LineReader
+(defprotocol ILineReader
   (read-line [reader]
     "Returns the next line from the Reader, nil if the end of stream has been reached"))
 
@@ -50,10 +51,11 @@
         r)))
   (peek-char [reader]
     (when (> s-len s-pos)
-      (nth s s-pos)))
+      (nth s s-pos))))
 
-  LineReader
-  (read-line [reader]
+(deftype LineReader [reader]
+  ILineReader
+  (read-line [_]
     (let [buf (goog.string.StringBuffer.)]
       (loop [c (read-char reader)]
         (when c
@@ -62,6 +64,61 @@
             (do
               (.append buf c)
               (recur (read-char reader)))))))))
+
+#_(deftype BufferedReader [rdr length ^:unsynchronized-mutable buf]
+  Reader
+  (read-char [_]
+    (letfn [(pop-char! []
+              (let [c (aget buf 0)]
+                (goog.array/removeAt buf 0)
+                (when (zero? (.-length buf)) (set! buf nil))
+                (char c)))]
+      (if-not buf
+        (do
+          (set! buf (js/Array. length))
+          (let [bytes-read (-read rdr buf 0 length nil)]
+            (when (> bytes-read 0)
+              (when (< bytes-read length)
+                (set! buf (goog.array/slice buf 0 bytes-read)))
+              (pop-char!))))
+        (pop-char!))))
+  (peek-char [reader]
+    (assert fd "Reader not open, fd is not set")
+    (if-not buf
+      (do
+        (set! buf (js/Array. length))
+        (let [bytes-read (-read rdr buf 0 length nil)]
+          (when (> bytes-read 0)
+            (char (aget buf 0)))))
+      (char (aget buf 0))))
+
+  IBufferedReader
+  (-read [_ buf offset length position]
+    ()
+    )
+
+  LineReader
+  (read-line [reader]
+    (assert fd "Reader not open, fd is not set")
+    (let [buf (goog.string.StringBuffer.)]
+      (loop [c (read-char reader)]
+        (when c
+          (if (newline? c)
+            (str buf)
+            (do
+              (.append buf c)
+              (recur (read-char reader))))))))
+
+  Openable
+  (open [_ body]
+    (set! fd (.openSync fs path "r"))
+    (body))
+
+  Closeable
+  (close [_]
+    (.closeSync fs fd)
+    (set! fd nil)
+    (set! buf nil)))
 
 (deftype UrlReader [url xhr-fn ^:unsynchronized-mutable reader]
   Reader
@@ -72,20 +129,20 @@
     (assert reader "Reader not open, reader is not set")
     (peek-char reader))
 
-  LineReader
+  ILineReader
   (read-line [this] (read-line reader))
 
   Openable
   (open [this body] (open this body {}))
-  (open [this body opts]
-    (apply xhr-fn
-     :url (str url)
-     :method :get
-     :on-complete (fn [response]
-                    (set! reader (StringReader. response (count response) 0))
-                    (body))
-     (mapcat identity opts)))
-
+  (open [this body {:keys [rdr-fn] :as opts}]
+    (let [constructor (or rdr-fn #(StringReader. % (count %) 0))]
+      (apply xhr-fn
+             :url (str url)
+             :method :get
+             :on-complete (fn [response]
+                            (set! reader (constructor response))
+                            (body))
+             (mapcat identity (dissoc opts :rdr-fn)))))
 
   Closeable
   (close [_] (set! reader nil)))
@@ -184,7 +241,7 @@
 
 (defn line-seq
   "Returns the lines of text from rdr as a lazy sequence of strings.
-  rdr must implement cljs.node.reader.LineReader."
+  rdr must implement cljs.js.io.ILineReader."
   [rdr]
   (when-let [line (read-line rdr)]
     (cons line (lazy-seq (line-seq rdr)))))

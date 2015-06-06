@@ -1,4 +1,4 @@
-(ns cljs.js.io.reader-test
+(ns cljs.js.io.node-test
   (:refer-clojure :exclude [with-open])
   (:require
    [clojure.string :as string]
@@ -16,7 +16,8 @@
   (try
     (prn tools-reader-url)
     (with-open [r (io/reader tools-reader-url)]
-     (try
+      {:rdr-fn #(io/LineReader. (io/StringReader. % (count %) 0))}
+      (try
        (prn (io/read-line r))
        (catch js/Error e
          (.log js/console (.-message e))

@@ -28,3 +28,25 @@
       #{"http" "https"} (UrlReader. x xhr nil)))
   
   )
+
+(deftype ReadableReader [readable])
+
+(deftype FileWriter
+  [fs path length enc ^:unsynchronized-mutable fd ^:unsynchronized-mutable pos]
+  Writer
+  (append! [_ data]
+    (.writeSync fs fd data pos)
+    (set! pos (+ pos (count data))))
+  (flush! [_] (.fsyncSync fs fd))
+  (write! [_ data] (.writeSync fs fd data))
+  (write! [_ data off len] (.writeSync fs fd (subs data off len)))
+  
+  Openable
+  (open [_ body]
+    (set! fd (.openSync fs path "w"))
+    (body))
+  
+  Closeable
+  (close [_]
+    (.closeSync fs fd)
+    (set! fd nil)))
