@@ -65,9 +65,10 @@
               (.append buf c)
               (recur (read-char reader)))))))))
 
-#_(deftype BufferedReader [rdr length ^:unsynchronized-mutable buf]
+(deftype BufferedReader [rdr length ^:unsynchronized-mutable buf]
   Reader
   (read-char [_]
+    (assert rdr "Reader not open, rdr is not set")
     (letfn [(pop-char! []
               (let [c (aget buf 0)]
                 (goog.array/removeAt buf 0)
@@ -83,7 +84,7 @@
               (pop-char!))))
         (pop-char!))))
   (peek-char [reader]
-    (assert fd "Reader not open, fd is not set")
+    (assert rdr "Reader not open, rdr is not set")
     (if-not buf
       (do
         (set! buf (js/Array. length))
@@ -94,31 +95,8 @@
 
   IBufferedReader
   (-read [_ buf offset length position]
-    ()
-    )
-
-  LineReader
-  (read-line [reader]
-    (assert fd "Reader not open, fd is not set")
-    (let [buf (goog.string.StringBuffer.)]
-      (loop [c (read-char reader)]
-        (when c
-          (if (newline? c)
-            (str buf)
-            (do
-              (.append buf c)
-              (recur (read-char reader))))))))
-
-  Openable
-  (open [_ body]
-    (set! fd (.openSync fs path "r"))
-    (body))
-
-  Closeable
-  (close [_]
-    (.closeSync fs fd)
-    (set! fd nil)
-    (set! buf nil)))
+    (assert rdr "Reader not open, rdr is not set")
+    (-read rdr buf offset length position)))
 
 (deftype UrlReader [url xhr-fn ^:unsynchronized-mutable reader]
   Reader

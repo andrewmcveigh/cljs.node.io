@@ -18,7 +18,7 @@
     (with-open [r (io/reader tools-reader-url)]
       {:rdr-fn #(io/LineReader. (io/StringReader. % (count %) 0))}
       (try
-       (prn (io/read-line r))
+       (prn (take 5 (drop 5 (io/line-seq r))))
        (catch js/Error e
          (.log js/console (.-message e))
          (.log js/console (.-stack e))
