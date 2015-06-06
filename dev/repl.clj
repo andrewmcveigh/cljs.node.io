@@ -1,6 +1,5 @@
 (ns repl
   (:require
-   [cemerick.piggieback]
    [cljs.build.api]
    [cljs.closure]
    [cljs.repl]
@@ -17,8 +16,13 @@
                        :output-to "out/main.js"
                        :verbose true}))
 
-(defn nrepl []
+#_(defn nrepl []
   (cemerick.piggieback/cljs-repl (cljs.repl.node/repl-env)
+                                 ;; :watch "src"
+                           ;;      :output-dir "out"
+                                 ))
+(defn repl []
+  (cljs.repl/repl (cljs.repl.node/repl-env)
                                  ;; :watch "src"
                            ;;      :output-dir "out"
                                  ))
@@ -36,3 +40,5 @@
   (nrepl)
   
   )
+
+;; (.end (.request (js/require "http") "http://google.com" (fn [x] (.log js/console x) (.on x "data" (fn [data] (.log js/console data))))))

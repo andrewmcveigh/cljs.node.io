@@ -56,19 +56,19 @@
   (make-input-stream [x opts] "Creates a BufferedInputStream. See also IOFactory docs.")
   (make-output-stream [x opts] "Creates a BufferedOutputStream. See also IOFactory docs."))
 
-(defn reader
-  [x & opts]
-  (make-reader x (when opts (apply hash-map opts))))
+;; (defn reader
+;;   [x & opts]
+;;   (make-reader x (when opts (apply hash-map opts))))
 
-(defn writer
-  [x & opts]
-  (make-writer x (when opts (apply hash-map opts))))
+;; (defn writer
+;;   [x & opts]
+;;   (make-writer x (when opts (apply hash-map opts))))
 
 (extend-protocol IOFactory
   Url
   (make-reader [x opts]
-    (if (= "file:" (url/-protocol x))
-      (apply reader/sync-file-reader (as-file x) (mapcat identity opts))
+    (case (url/-protocol x)
+      "file" (apply reader/sync-file-reader (as-file x) (mapcat identity opts))
       (throw (ex-info "Cannot create reader from a URL that does not represent a file"
                       {:type :illegal-argument}))))
 

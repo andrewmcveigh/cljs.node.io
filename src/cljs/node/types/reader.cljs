@@ -72,6 +72,55 @@
     (set! fd nil)
     (set! buf nil)))
 
+(deftype ReadableReader
+  [readable length ^:unsynchronized-mutable fd ^:unsynchronized-mutable buf]
+  Reader
+  (read-char [reader]
+    (assert fd "Reader not open, fd is not set")
+    (letfn [(pop-char! []
+              (let [c (aget buf 0)]
+                (goog.array/removeAt buf 0)
+                (when (zero? (.-length buf)) (set! buf nil))
+                (char c)))]
+      (if-not buf
+        (do
+          (set! buf (js/Buffer. length))
+          (let [bytes-read (.read readable 1)]
+            (when (> bytes-read 0)
+              (when (< bytes-read length)
+                (set! buf (.slice buf 0 bytes-read)))
+              (pop-char!))))
+        (pop-char!))))
+  (peek-char [reader]
+    (assert fd "Reader not open, fd is not set")
+    (if-not buf
+      (do
+        (set! buf (js/Buffer. length))
+        (let [bytes-read (.read readable 1)]
+          (when (> bytes-read 0)
+            (char (aget buf 0)))))
+      (char (aget buf 0))))
+  
+  LineReader
+  (read-line [reader]
+    (assert fd "Reader not open, fd is not set")
+    (let [buf (goog.string.StringBuffer.)]
+      (loop [c (read-char reader)]
+        (when c
+          (if (newline? c)
+            (str buf)
+            (do
+              (.append buf c)
+              (recur (read-char reader))))))))
+
+  Openable
+  (open [_ body]
+    (.on readable "readable" body))
+
+  Closeable
+  (close [_]
+    (.close readable)))
+
 (deftype StdinReader [reader fs]
   Reader
   (read-char [_] (read-char reader))
