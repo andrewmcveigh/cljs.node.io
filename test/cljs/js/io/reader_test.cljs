@@ -1,25 +1,36 @@
-;; (ns cljs.js.io.reader-test
-;;   (:refer-clojure :exclude [with-open])
-;;   (:require
-;;    [clojure.string :as string]
-;;    [cljs.js.io :as io]
-;;    [cljs.js.io.reader :as reader]
-;;    [cljs.js.io.stream :refer-macros [with-open]]
-;;    [cljs.test :refer-macros [deftest is are run-tests]])
-;;   (:import cljs.js.io.node.reader.UrlReader))
+(ns cljs.js.io.reader-test
+  (:refer-clojure :exclude [with-open])
+  (:require
+   [clojure.string :as string]
+   [cljs.js.io :as io :refer-macros [with-open]]
+   [cljs.js.io.node :as node]
+   [cljs.test :refer-macros [deftest is are run-tests]]))
 
-;; (def tools-reader-url
-;;   (-> "https://raw.githubusercontent.com
-;;        /uswitch/tools.reader/master/src/main/cljs/cljs/tools/reader.cljs"
-;;       (string/replace #"[\s\n]+" "")))
+(def tools-reader-url
+  (-> "https://raw.githubusercontent.com
+       /uswitch/tools.reader/master/src/main/cljs/cljs/tools/reader.cljs"
+      (string/replace #"[\s\n]+" "")
+      (io/as-url)))
 
-;; (deftest url-reader-test
-;;   ;; (with-open [r (UrlReader. tools-reader-url nil)]
-;;   ;;   (prn (reader/read-line r))
-;;   ;; )
-;;   (prn (reader/read-char (StringReader. "test" 4 0)))
+(deftest url-reader-test
+  (try
+    (prn tools-reader-url)
+    (with-open [r (io/reader tools-reader-url)]
+     (try
+       (prn (io/read-line r))
+       (catch js/Error e
+         (.log js/console (.-message e))
+         (.log js/console (.-stack e))
+         )
+       )
+     )
+      (catch js/Error e
+         (.log js/console (.-message e))
+         (.log js/console (.-stack e))
+         )
+    )
 
-;; )
+)
 
-;; (enable-console-print!)
-;; (run-tests)
+(enable-console-print!)
+(run-tests)
