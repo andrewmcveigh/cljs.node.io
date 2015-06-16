@@ -153,10 +153,10 @@
 
   Url
   (as-url [u] u)
-  (as-file [{:keys [protocol pathname] :as u}]
-    (if (= "file" protocol)
+  (as-file [u]
+    (if (= "file" (url/-scheme u))
       (as-file (escaped-utf8-urlstring->str
-                (string/replace pathname \/ separator)))
+                (string/replace (url/-path u) \/ separator)))
       (throw (ex-info (str "Not a file: " u) {:type :illegal-argument})))))
 
 (defprotocol IOFactory
@@ -165,7 +165,7 @@
   be unequivocally converted to the requested kind of stream.
 
   Common options include
-   
+
   :append    true to open stream in append mode
   :encoding  string name of encoding to use, e.g. \"UTF-8\".
 
