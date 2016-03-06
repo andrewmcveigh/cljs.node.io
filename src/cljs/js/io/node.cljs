@@ -32,6 +32,32 @@
 
   )
 
+(deftype ReadableReader [readable length ^:unsynchronized-mutable buf]
+  Reader
+  (read-char [reader]
+    (letfn [(pop-char! []
+              (let [c (aget buf 0)]
+                (goog.array/removeAt buf 0)
+                (when (zero? (.-length buf)) (set! buf nil))
+                (char c)))]
+      (if-not buf
+        (do
+          (set! buf (js/Buffer. length))
+          (let [bytes-read (.read readable 1)]
+            (when (> bytes-read 0)
+              (when (< bytes-read length)
+                (set! buf (.slice buf 0 bytes-read)))
+              (pop-char!))))
+        (pop-char!))))
+  (peek-char [reader]
+    (if-not buf
+      (do
+        (set! buf (js/Buffer. length))
+        (let [bytes-read (.read readable 1)]
+          (when (> bytes-read 0)
+            (char (aget buf 0)))))
+      (char (aget buf 0)))))
+
 (deftype SyncFileReader
     [fs path length ^:unsynchronized-mutable fd ^:unsynchronized-mutable buf]
   Reader

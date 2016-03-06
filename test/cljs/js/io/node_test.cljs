@@ -30,7 +30,6 @@
          (.log js/console (.-stack e))
          )
     )
-
 )
 
 (enable-console-print!)
